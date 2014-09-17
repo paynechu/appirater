@@ -54,28 +54,27 @@ NSString *templateReviewURL = @"itms-apps://ax.itunes.apple.com/WebObjects/MZSto
 NSString *templateReviewURLiOS7 = @"itms-apps://itunes.apple.com/app/idAPP_ID";
 NSString *templateReviewURLiOS8 = @"itms-apps://itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?id=APP_ID&onlyLatestVersion=true&pageNumber=0&sortOrdering=1&type=Purple+Software";
 
-static NSString *_appId;
-static double _daysUntilPrompt = 30;
-static NSInteger _usesUntilPrompt = 20;
-static NSInteger _significantEventsUntilPrompt = -1;
-static double _timeBeforeReminding = 1;
-static BOOL _debug = NO;
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_5_0
-	static id<AppiraterDelegate> _delegate;
-#else
-	__weak static id<AppiraterDelegate> _delegate;
-#endif
-static BOOL _usesAnimation = TRUE;
-static UIStatusBarStyle _statusBarStyle;
-static BOOL _modalOpen = false;
-static BOOL _alwaysUseMainBundle = NO;
-
 @interface Appirater ()
+
+@property (nonatomic, copy) NSString *appId;
+@property (nonatomic) double daysUntilPrompt;
+@property (nonatomic) NSInteger usesUntilPrompt;
+@property (nonatomic) NSInteger significantEventsUntilPrompt;
+@property (nonatomic) double timeBeforeReminding;
+@property (nonatomic) BOOL debug;
+@property (nonatomic, weak) id<AppiraterDelegate> appiraterDelegate;
+@property (nonatomic) BOOL usesAnimation;
+@property (nonatomic) UIStatusBarStyle statusBarStyle;
+@property (nonatomic) BOOL modalOpen;
+@property (nonatomic) BOOL alwaysUseMainBundle;
+
+
 @property (nonatomic, copy) NSString *alertTitle;
 @property (nonatomic, copy) NSString *alertMessage;
 @property (nonatomic, copy) NSString *alertCancelTitle;
 @property (nonatomic, copy) NSString *alertRateTitle;
 @property (nonatomic, copy) NSString *alertRateLaterTitle;
+
 - (BOOL)connectedToNetwork;
 + (Appirater*)sharedInstance;
 - (void)showPromptWithChecks:(BOOL)withChecks
@@ -92,77 +91,77 @@ static BOOL _alwaysUseMainBundle = NO;
 @synthesize ratingAlert;
 
 + (void) setAppId:(NSString *)appId {
-    _appId = appId;
+    self.sharedInstance.appId = appId;
 }
 
 + (void) setDaysUntilPrompt:(double)value {
-    _daysUntilPrompt = value;
+    self.sharedInstance.daysUntilPrompt = value;
 }
 
 + (void) setUsesUntilPrompt:(NSInteger)value {
-    _usesUntilPrompt = value;
+    self.sharedInstance.usesUntilPrompt = value;
 }
 
 + (void) setSignificantEventsUntilPrompt:(NSInteger)value {
-    _significantEventsUntilPrompt = value;
+    self.sharedInstance.significantEventsUntilPrompt = value;
 }
 
 + (void) setTimeBeforeReminding:(double)value {
-    _timeBeforeReminding = value;
+    self.sharedInstance.timeBeforeReminding = value;
 }
 
 + (void) setCustomAlertTitle:(NSString *)title
 {
-    [self sharedInstance].alertTitle = title;
+    self.sharedInstance.alertTitle = title;
 }
 
 + (void) setCustomAlertMessage:(NSString *)message
 {
-    [self sharedInstance].alertMessage = message;
+    self.sharedInstance.alertMessage = message;
 }
 
 + (void) setCustomAlertCancelButtonTitle:(NSString *)cancelTitle
 {
-    [self sharedInstance].alertCancelTitle = cancelTitle;
+    self.sharedInstance.alertCancelTitle = cancelTitle;
 }
 
 + (void) setCustomAlertRateButtonTitle:(NSString *)rateTitle
 {
-    [self sharedInstance].alertRateTitle = rateTitle;
+    self.sharedInstance.alertRateTitle = rateTitle;
 }
 
 + (void) setCustomAlertRateLaterButtonTitle:(NSString *)rateLaterTitle
 {
-    [self sharedInstance].alertRateLaterTitle = rateLaterTitle;
+    self.sharedInstance.alertRateLaterTitle = rateLaterTitle;
 }
 
 + (void) setDebug:(BOOL)debug {
-    _debug = debug;
+    self.sharedInstance.debug = debug;
 }
 + (void)setDelegate:(id<AppiraterDelegate>)delegate{
-	_delegate = delegate;
+    self.sharedInstance.appiraterDelegate = delegate;
 }
 + (void)setUsesAnimation:(BOOL)animation {
-	_usesAnimation = animation;
+    self.sharedInstance.usesAnimation = animation;
 }
 + (void)setOpenInAppStore:(BOOL)openInAppStore {
-    [Appirater sharedInstance].openInAppStore = openInAppStore;
+    self.sharedInstance.openInAppStore = openInAppStore;
 }
 + (void)setStatusBarStyle:(UIStatusBarStyle)style {
-	_statusBarStyle = style;
+	self.sharedInstance.statusBarStyle = style;
 }
 + (void)setModalOpen:(BOOL)open {
-	_modalOpen = open;
+	self.sharedInstance.modalOpen = open;
 }
 + (void)setAlwaysUseMainBundle:(BOOL)alwaysUseMainBundle {
-    _alwaysUseMainBundle = alwaysUseMainBundle;
+    self.sharedInstance.alwaysUseMainBundle = alwaysUseMainBundle;
 }
 
 + (NSBundle *)bundle
 {
     NSBundle *bundle;
 
-    if (_alwaysUseMainBundle) {
+    if (self.sharedInstance.alwaysUseMainBundle) {
         bundle = [NSBundle mainBundle];
     } else {
         NSURL *appiraterBundleURL = [[NSBundle mainBundle] URLForResource:@"Appirater" withExtension:@"bundle"];
@@ -258,7 +257,6 @@ static BOOL _alwaysUseMainBundle = NO;
         static dispatch_once_t onceToken;
         dispatch_once(&onceToken, ^{
             appirater = [[Appirater alloc] init];
-			appirater.delegate = _delegate;
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appWillResignActive) name:
                 UIApplicationWillResignActiveNotification object:nil];
         });
@@ -492,7 +490,7 @@ static BOOL _alwaysUseMainBundle = NO;
 }
 
 + (void)appWillResignActive {
-	if (_debug)
+	if (self.sharedInstance.debug)
 		NSLog(@"APPIRATER appWillResignActive");
 	[[Appirater sharedInstance] hideRatingAlert];
 }
@@ -580,6 +578,11 @@ static BOOL _alwaysUseMainBundle = NO;
 
 + (void)rateApp {
 	
+    id<AppiraterDelegate> delegate = self.sharedInstance.appiraterDelegate;
+    if(delegate && [delegate respondsToSelector:@selector(appiraterWillRateAppInAppStore:)]){
+        [delegate appiraterWillRateAppInAppStore:self.sharedInstance];
+    }
+    
 	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
 	[userDefaults setBool:YES forKey:kAppiraterRatedCurrentVersion];
 	[userDefaults synchronize];
@@ -588,20 +591,20 @@ static BOOL _alwaysUseMainBundle = NO;
 	if (![Appirater sharedInstance].openInAppStore && NSStringFromClass([SKStoreProductViewController class]) != nil) {
 		
 		SKStoreProductViewController *storeViewController = [[SKStoreProductViewController alloc] init];
-		NSNumber *appId = [NSNumber numberWithInteger:_appId.integerValue];
+		NSNumber *appId = [NSNumber numberWithInteger:self.sharedInstance.appId.integerValue];
 		[storeViewController loadProductWithParameters:@{SKStoreProductParameterITunesItemIdentifier:appId} completionBlock:nil];
 		storeViewController.delegate = self.sharedInstance;
         
         id <AppiraterDelegate> delegate = self.sharedInstance.delegate;
 		if ([delegate respondsToSelector:@selector(appiraterWillPresentModalView:animated:)]) {
-			[delegate appiraterWillPresentModalView:self.sharedInstance animated:_usesAnimation];
+			[delegate appiraterWillPresentModalView:self.sharedInstance animated:self.sharedInstance.usesAnimation];
 		}
-		[[self getRootViewController] presentViewController:storeViewController animated:_usesAnimation completion:^{
+		[[self getRootViewController] presentViewController:storeViewController animated:self.sharedInstance.usesAnimation completion:^{
 			[self setModalOpen:YES];
 			//Temporarily use a black status bar to match the StoreKit view.
 			[self setStatusBarStyle:[UIApplication sharedApplication].statusBarStyle];
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
-			[[UIApplication sharedApplication]setStatusBarStyle:UIStatusBarStyleLightContent animated:_usesAnimation];
+			[[UIApplication sharedApplication]setStatusBarStyle:UIStatusBarStyleLightContent animated:self.sharedInstance.usesAnimation];
 #endif
 		}];
 	
@@ -611,16 +614,16 @@ static BOOL _alwaysUseMainBundle = NO;
 		#if TARGET_IPHONE_SIMULATOR
 		NSLog(@"APPIRATER NOTE: iTunes App Store is not supported on the iOS simulator. Unable to open App Store page.");
 		#else
-		NSString *reviewURL = [templateReviewURL stringByReplacingOccurrencesOfString:@"APP_ID" withString:[NSString stringWithFormat:@"%@", _appId]];
+		NSString *reviewURL = [templateReviewURL stringByReplacingOccurrencesOfString:@"APP_ID" withString:[NSString stringWithFormat:@"%@", self.sharedInstance.appId]];
 
 		// iOS 7 needs a different templateReviewURL @see https://github.com/arashpayan/appirater/issues/131
 		if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0 && [[[UIDevice currentDevice] systemVersion] floatValue] < 7.1) {
-			reviewURL = [templateReviewURLiOS7 stringByReplacingOccurrencesOfString:@"APP_ID" withString:[NSString stringWithFormat:@"%@", _appId]];
+			reviewURL = [templateReviewURLiOS7 stringByReplacingOccurrencesOfString:@"APP_ID" withString:[NSString stringWithFormat:@"%@", self.sharedInstance.appId]];
 		}
         // iOS 8 needs a different templateReviewURL also @see https://github.com/arashpayan/appirater/issues/182
         else if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0)
         {
-            reviewURL = [templateReviewURLiOS8 stringByReplacingOccurrencesOfString:@"APP_ID" withString:[NSString stringWithFormat:@"%@", _appId]];
+            reviewURL = [templateReviewURLiOS8 stringByReplacingOccurrencesOfString:@"APP_ID" withString:[NSString stringWithFormat:@"%@", self.sharedInstance.appId]];
         }
 
 		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:reviewURL]];
@@ -631,7 +634,7 @@ static BOOL _alwaysUseMainBundle = NO;
 - (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
 	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
     
-    id <AppiraterDelegate> delegate = _delegate;
+    id <AppiraterDelegate> delegate = _appiraterDelegate;
 	
 	switch (buttonIndex) {
 		case 0:
@@ -673,15 +676,15 @@ static BOOL _alwaysUseMainBundle = NO;
 
 //Close the in-app rating (StoreKit) view and restore the previous status bar style.
 + (void)closeModal {
-	if (_modalOpen) {
-		[[UIApplication sharedApplication]setStatusBarStyle:_statusBarStyle animated:_usesAnimation];
-		BOOL usedAnimation = _usesAnimation;
+	if (self.sharedInstance.modalOpen) {
+		[[UIApplication sharedApplication]setStatusBarStyle:self.sharedInstance.statusBarStyle animated:self.sharedInstance.usesAnimation];
+		BOOL usedAnimation = self.sharedInstance.usesAnimation;
 		[self setModalOpen:NO];
 		
 		// get the top most controller (= the StoreKit Controller) and dismiss it
 		UIViewController *presentingController = [UIApplication sharedApplication].keyWindow.rootViewController;
 		presentingController = [self topMostViewController: presentingController];
-		[presentingController dismissViewControllerAnimated:_usesAnimation completion:^{
+		[presentingController dismissViewControllerAnimated:self.sharedInstance.usesAnimation completion:^{
             id <AppiraterDelegate> delegate = self.sharedInstance.delegate;
 			if ([delegate respondsToSelector:@selector(appiraterDidDismissModalView:animated:)]) {
 				[delegate appiraterDidDismissModalView:(Appirater *)self animated:usedAnimation];
